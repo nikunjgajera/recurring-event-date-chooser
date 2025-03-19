@@ -1,4 +1,4 @@
-<h3 class="text-center mt-3">Recurring event date picker</h3>
+<h3 class="text-center mt-3">Recurring Scheduler POC and RRule Tester</h3>
 <div [formGroup]="recurringForm" class="p-5 m-auto">
   <div class="form-group mb-1 font-weight-bold">
     <label>Date range</label>
@@ -116,7 +116,65 @@
         Monthly
       </label>
     </div>
+
+    <div class="custom-control custom-radio custom-control-inline">
+      <input
+        class="custom-control-input"
+        type="radio"
+        id="yearly"
+        formControlName="frequency"
+        [value]="Frequency.YEARLY"
+      />
+      <label
+        class="custom-control-label form-check-label"
+        for="yearly"
+      >
+        Yearly
+      </label>
+    </div>
   </div>
+
+  <ng-container>
+    <div class="form-group mb-1">
+      <label class="font-weight-bold">On Every</label>
+    </div>
+
+    <select *ngIf="f.frequency.value === Frequency.DAILY"
+           id="onEvery"
+           class="form-control"
+           placeholder="1 to 30"
+           name="onEvery"
+           formControlName="onEvery"
+           >
+      <option *ngFor="let step of [].constructor(30); let i = index" [value]="i+1"> {{i+1}} Day</option>
+    </select>
+
+    <select *ngIf="f.frequency.value === Frequency.WEEKLY"
+            id="onEvery"
+            class="form-control"
+            name="onEvery"
+            formControlName="onEvery">
+      <option *ngFor="let step of [].constructor(26); let i = index" [value]="i+1"> {{i+1}} Week</option>
+    </select>
+
+    <select *ngIf="f.frequency.value === Frequency.MONTHLY"
+            id="onEvery"
+            class="form-control"
+            name="onEvery"
+            formControlName="onEvery">
+      <option *ngFor="let step of [1,2,3,4,5,6,7,8,9,10,11,12,18,24,36,48]" [value]="step">{{step}} Month</option>
+    </select>
+
+    <select *ngIf="f.frequency.value === Frequency.YEARLY"
+            id="onEvery"
+            class="form-control"
+            placeholder="1 to 30"
+            name="onEvery"
+            formControlName="onEvery"
+    >
+      <option *ngFor="let step of [].constructor(10); let i = index" [value]="i+1"> {{i+1}} Year</option>
+    </select>
+  </ng-container>
 
   <ng-container *ngIf="f.frequency.value === Frequency.WEEKLY">
     <div class="form-group mb-1">
@@ -148,27 +206,55 @@
     </div>
   </ng-container>
 
-  <ng-container *ngIf="f.frequency.value === Frequency.MONTHLY">
-    <div class="form-group">
-      <label class="font-weight-bold" for="onMonthday">On monthday</label>
-      <div class="input-group" style="width: 250px;">
-        <input
-          id="onMonthday"
-          class="form-control"
-          placeholder="yyyy-mm-dd"
-          name="dp"
-          formControlName="onMonthday"
-          ngbDatepicker
-          #d="ngbDatepicker"
-        >
-        <div class="input-group-append">
-          <button
-            type="button"
-            class="btn btn-outline-secondary calendar"
-            (click)="d.toggle()"
-          ></button>
-        </div>
+  <ng-container *ngIf="f.frequency.value === Frequency.MONTHLY || f.frequency.value === Frequency.YEARLY">
+    <div class="form-group mb-1">
+      <label class="font-weight-bold">Action By</label>
+    </div>
+
+    <select id="actionBy"
+            class="form-control"
+            name="actionBy"
+            formControlName="actionBy">
+      <option value="DAY">By Day</option>
+      <option value="DATE">By Date</option>
+    </select>
+    <div *ngIf="f.frequency.value === Frequency.YEARLY">
+      <div class="form-group mb-1">
+        <label class="font-weight-bold">On Month</label>
       </div>
+
+      <select id="onMonth"
+              class="form-control"
+              name="onMonth"
+              formControlName="onMonth" >
+        <option *ngFor="let step of monthsMap; let i = index" [value]="step"> {{step}}</option>
+      </select>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="(f.frequency.value === Frequency.MONTHLY || f.frequency.value === Frequency.YEARLY)
+    && f.actionBy.value === 'DAY'">
+    <div class="form-group">
+      <label class="font-weight-bold" for="onNWeekday">On monthday</label>
+      <select id="onNWeekday"
+              class="form-control"
+              name="onNWeekday"
+              formControlName="onNWeekday" multiple="multiple">
+        <option *ngFor="let step of weekdayMonthFreqMap" [value]="step">{{step}}</option>
+      </select>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="(f.frequency.value === Frequency.MONTHLY || f.frequency.value === Frequency.YEARLY)  && f.actionBy.value === 'DATE'">
+    <div class="form-group">
+      <label class="font-weight-bold" for="onMonthday">On month date</label>
+      <select id="onMonthday"
+              class="form-control"
+              name="onMonthday"
+              formControlName="onMonthday" multiple="multiple">
+        <option *ngFor="let step of [].constructor(31); let i = index" [value]="i+1"> {{i+1}} Day</option>
+      </select>
+
     </div>
   </ng-container>
 

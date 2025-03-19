@@ -30,6 +30,15 @@ export class RecurringEventPickerComponent implements OnInit, OnDestroy {
     RRule.SA,
     RRule.SU
   ];
+
+  private monthsMap = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  private weekdaysMap = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  private monthlyFreqMap: any = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Last'];
+  private weekdayMonthFreqMap = this.monthlyFreqMap.flatMap(d => this.weekdaysMap.map(v => d + ' ' + v));
+
   private destroy$ = new Subject();
 
   get f(): any {
@@ -103,7 +112,11 @@ export class RecurringEventPickerComponent implements OnInit, OnDestroy {
       onWeekday: this.fb.array(
         [false, false, false, false, false, false, false].map(val => this.fb.control(val))
       ),
-      onMonthday: [this.today]
+      onMonthday: [[]],
+      onEvery: [1, Validators.required],
+      actionBy: ['DATE', Validators.required],
+      onNWeekday: null,
+      onMonth: this.monthsMap[0]
     });
   }
 
@@ -112,30 +125,64 @@ export class RecurringEventPickerComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe((value) => {
       const options: Partial<Options> = {
-        freq: value.frequency || Frequency.DAILY,
+        freq: value.frequency,
+        interval: Number(value.onEvery),
         dtstart: toNativeDate(value.startDate || this.today),
         until: toNativeDate(value.endDate || this.today),
-        byweekday: value.frequency === Frequency.WEEKLY ?
-          this.getWeekday(value.onWeekday) : null,
-        bymonthday: value.frequency === Frequency.MONTHLY ?
-          (value.onMonthday && value.onMonthday.day || this.today.day) : null
+        // byweekday: value.frequency === Frequency.WEEKLY ?
+        //   this.getWeekday(value.onWeekday) : null,
+        byweekday: (value.frequency === Frequency.MONTHLY || value.frequency === Frequency.YEARLY) && value.actionBy === 'DAY' ?
+          this.getWeekdaysInJson(value.onNWeekday) : null,
+        bymonthday: (value.frequency === Frequency.MONTHLY || value.frequency === Frequency.YEARLY) && value.actionBy === 'DATE' ?
+          this.getMonthday(value.onMonthday) : null,
+        bymonth: value.frequency === Frequency.YEARLY ?
+          this.monthsMap.indexOf(value.onMonth) + 1 : null
       };
-      console.log('options', options);
+      // console.log('options', options);
       const rule = new RRule(options);
       this.dates = rule.all();
+      // Rule TMP is required because this library has a bug it is not able to transform to accurate string representation
+      // that we required in order to save and parse it later
+      const ruleTmp = new RRule({...options, byweekday: this.getWeekdaysInArray(value.onNWeekday)});
+      // console.log(rule);
+      console.log('Applied Rule String --->' + rule.toString());
+      console.log('RuleTmp String --->' + rule.toString());
+      // console.log('Rule From String -FREQ=MONTHLY;INTERVAL=1;BYDAY=+1MO,+5SA,-1SU,-1SA-->');
+      // const rule2 = RRule.fromString(ruleTmp.toString());
+      // console.log(rule2);
+      // console.log(rule2.all());
     });
-
+    const now = new Date();
     this.recurringForm.patchValue({
-      startDate: this.today,
-      endDate: this.calendar.getNext(this.today, 'd', 7),
+      startDate: this.calendar.getPrev(this.today, 'd', (now.getDate() - 1)),
+      endDate: this.calendar.getNext(this.today, 'd', (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - (now.getDate()))),
       frequency: Frequency.DAILY
     });
   }
 
-  private getWeekday(byWeekday: boolean[]): any {
-    const result = byWeekday
-      .map((v, i) => v && this.weekdayMap[i] || null)
-      .filter(v => !!v);
-    return result.length ? result : null;
+  /**
+   * This method is returns and array representation of [First Monday, Last Saturday] in json [{weekday:0, n: 1},{weekday: 5, n: -1}]
+   * @param byWeekday - Array of selected weekdays combination
+   */
+  private getWeekdaysInJson(byWeekday: string[]): any {
+    return !byWeekday ? [] : byWeekday
+      .map(d => ( {weekday : this.weekdaysMap.indexOf(d.split(' ')[1]), n : this.getDayMonthFrequencyIndex(d.split(' ')[0])}));
+  }
+
+  /**
+   * This method is returns and array representation of [First Monday, Last Saturday] in array [[0,1],[5,-1]]
+   * @param byWeekday - Array of selected weekdays combination
+   */
+  private getWeekdaysInArray(byWeekday: string[]): any {
+    return !byWeekday ? [] : byWeekday
+      .map(d => ( [this.weekdaysMap.indexOf(d.split(' ')[1]), this.getDayMonthFrequencyIndex(d.split(' ')[0])]));
+  }
+
+  private getDayMonthFrequencyIndex(frequency): number{
+    return frequency === 'Last' ? -1 : this.monthlyFreqMap.indexOf(frequency) + 1;
+  }
+
+  private getMonthday(byMonthday: any): any {
+    return byMonthday;
   }
 }
