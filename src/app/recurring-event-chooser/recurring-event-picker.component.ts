@@ -19,6 +19,7 @@ export class RecurringEventPickerComponent implements OnInit, OnDestroy {
   recurringForm: FormGroup;
   hoveredDate: NgbDate | null = null;
   dates: Date[] = [];
+  rule = '';
 
   private today: NgbDate;
   private weekdayMap = [
@@ -143,10 +144,11 @@ export class RecurringEventPickerComponent implements OnInit, OnDestroy {
       this.dates = rule.all();
       // Rule TMP is required because this library has a bug it is not able to transform to accurate string representation
       // that we required in order to save and parse it later
-      const ruleTmp = new RRule({...options, byweekday: this.getWeekdaysInArray(value.onNWeekday)});
+      const ruleTmp = value.actionBy === 'DAY' ? new RRule({...options, byweekday: this.getWeekdaysInArray(value.onNWeekday)}) : rule;
       // console.log(rule);
+      this.rule = ruleTmp.toString();
       console.log('Applied Rule String --->' + rule.toString());
-      console.log('RuleTmp String --->' + rule.toString());
+      console.log('RuleTmp String --->' + this.rule);
       // console.log('Rule From String -FREQ=MONTHLY;INTERVAL=1;BYDAY=+1MO,+5SA,-1SU,-1SA-->');
       // const rule2 = RRule.fromString(ruleTmp.toString());
       // console.log(rule2);
