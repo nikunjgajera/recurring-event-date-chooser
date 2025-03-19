@@ -20,6 +20,8 @@ export class RecurringEventPickerComponent implements OnInit, OnDestroy {
   hoveredDate: NgbDate | null = null;
   dates: Date[] = [];
   rule = '';
+  ruleList: string[] = [];
+  ruleListDates: Date[] = [];
 
   private today: NgbDate;
   private weekdayMap = [
@@ -133,7 +135,8 @@ export class RecurringEventPickerComponent implements OnInit, OnDestroy {
         // byweekday: value.frequency === Frequency.WEEKLY ?
         //   this.getWeekday(value.onWeekday) : null,
         byweekday: (value.frequency === Frequency.MONTHLY || value.frequency === Frequency.YEARLY) && value.actionBy === 'DAY' ?
-          this.getWeekdaysInJson(value.onNWeekday) : null,
+          this.getWeekdaysInJson(value.onNWeekday) : value.frequency === Frequency.WEEKLY ?
+            this.getWeekday(value.onWeekday) : null ,
         bymonthday: (value.frequency === Frequency.MONTHLY || value.frequency === Frequency.YEARLY) && value.actionBy === 'DATE' ?
           this.getMonthday(value.onMonthday) : null,
         bymonth: value.frequency === Frequency.YEARLY ?
@@ -161,7 +164,12 @@ export class RecurringEventPickerComponent implements OnInit, OnDestroy {
       frequency: Frequency.DAILY
     });
   }
-
+  private getWeekday(byWeekday: boolean[]): any {
+    const result = byWeekday
+      .map((v, i) => v && this.weekdayMap[i] || null)
+      .filter(v => !!v);
+    return result.length ? result : null;
+  }
   /**
    * This method is returns and array representation of [First Monday, Last Saturday] in json [{weekday:0, n: 1},{weekday: 5, n: -1}]
    * @param byWeekday - Array of selected weekdays combination
@@ -186,5 +194,18 @@ export class RecurringEventPickerComponent implements OnInit, OnDestroy {
 
   private getMonthday(byMonthday: any): any {
     return byMonthday;
+  }
+
+  public addRule(ruleString): void {
+    this.ruleList.push(ruleString);
+    this.ruleListDates = [];
+    this.ruleList.forEach(rule => {
+      this.ruleListDates.push(...RRule.fromString(rule).all());
+    });
+  }
+
+  public clearRules(): void {
+    this.ruleList = [];
+    this.ruleListDates = [];
   }
 }
