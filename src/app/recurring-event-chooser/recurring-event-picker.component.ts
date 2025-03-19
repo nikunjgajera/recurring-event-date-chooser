@@ -147,7 +147,8 @@ export class RecurringEventPickerComponent implements OnInit, OnDestroy {
       this.dates = rule.all();
       // Rule TMP is required because this library has a bug it is not able to transform to accurate string representation
       // that we required in order to save and parse it later
-      const ruleTmp = value.actionBy === 'DAY' ? new RRule({...options, byweekday: this.getWeekdaysInArray(value.onNWeekday)}) : rule;
+      const ruleTmp = (value.frequency === Frequency.MONTHLY || value.frequency === Frequency.YEARLY) && value.actionBy === 'DAY' ?
+        new RRule({...options, byweekday: this.getWeekdaysInArray(value.onNWeekday)}) : rule;
       // console.log(rule);
       this.rule = ruleTmp.toString();
       console.log('Applied Rule String --->' + rule.toString());
